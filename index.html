@@ -7,7 +7,7 @@
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#4f46e5">
     <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="./logo.png">
+    <link class="apple-touch-icon" href="./logo.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -171,7 +171,8 @@
                     if (userData.role === 'admin') {
                         window.location.href = 'admin-dashboard.html';
                     } else if (userData.status === 'approved') {
-                        window.location.href = 'customer-dashboard.html';
+                        // কাস্টমারের সঠিক পেজের পাথ এখানে সেট করা হলো
+                        window.location.href = 'customer.html';
                     } else {
                         await signOut(auth);
                         alert("আপনার অ্যাকাউন্টটি এখনও অনুমোদন করা হয়নি। অনুগ্রহ করে অ্যাডমিনের অনুমোদনের অপেক্ষা করুন।");
@@ -246,4 +247,4 @@
         });
     </script>
 </body>
-    </html>
+</html>
