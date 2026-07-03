@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>গ্রাহক ড্যাশবোর্ড</title>
+    <!-- PWA Manifest Link -->
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Hind_Siliguri:wght=400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- PDF ডাউনলোডের লাইব্রেরি -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+    <style>body { font-family: 'Hind Siliguri', sans-serif; background-color: #f8fafc; }</style>
+</head>
+<body class="min-h-screen pb-24">
+
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-950 text-white pb-24 pt-6 px-4 shadow-lg rounded-b-[2.5rem]">
+        <div class="max-w-xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center text-emerald-400">
+                    <i class="fa-solid fa-user text-lg"></i>
+                </div>
+                <div>
+                    <h2 id="customerName" class="text-base font-bold">অপেক্ষা করুন...</h2>
+                    <p class="text-[10px] text-emerald-400">একটিভ অ্যাকাউন্ট</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="bg-rose-500/10 text-rose-300 border border-rose-500/20 px-4 py-2 rounded-xl text-xs font-bold">
+                লগআউট
+            </button>
+        </div>
+    </div>
+
+    <main class="max-w-xl mx-auto px-4 -mt-12 space-y-4">
+        
+        <section id="customerNoticeSection" class="hidden">
+            <div class="bg-gradient-to-r from-amber-500 to-orange-600 text-white p-4 rounded-3xl shadow-xl relative overflow-hidden flex items-start gap-3 border border-amber-400/20">
+                <div class="absolute -right-4 -bottom-4 text-white/10 text-7xl transform rotate-12 pointer-events-none">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+                <div class="w-9 h-9 rounded-2xl bg-white/20 flex items-center justify-center text-sm shrink-0 animate-bounce mt-0.5">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+                <div class="space-y-1 relative z-10 w-full">
+                    <h3 id="custNoticeTitle" class="text-xs md:text-sm font-bold tracking-wide">বিজ্ঞপ্তি লোড হচ্ছে...</h3>
+                    <p id="custNoticeMessage" class="text-[11px] text-amber-50/90 leading-relaxed font-medium whitespace-pre-line"></p>
+                    <span id="custNoticeTime" class="block text-[9px] text-white/70 pt-1 border-t border-white/10 mt-1"></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-slate-900 p-4 rounded-3xl shadow-xl border border-slate-800 text-white">
+            <div class="grid grid-cols-4 gap-1.5 text-center">
+                <div class="bg-white/5 p-2 rounded-2xl border border-white/5 flex flex-col justify-between min-h-[65px]">
+                    <p class="text-[9px] text-slate-400">মোট টাকা</p>
+                    <h4 id="custTotalSum" class="text-[11px] font-bold text-amber-400 mt-1 truncate">৳ ০</h4>
+                </div>
+                <div class="bg-white/5 p-2 rounded-2xl border border-white/5 flex flex-col justify-between min-h-[65px]">
+                    <p class="text-[9px] text-slate-400">মোট জমা</p>
+                    <h4 id="custTotalDeposit" class="text-[11px] font-bold text-emerald-400 mt-1 truncate">৳ ০</h4>
+                </div>
+                <div class="bg-white/5 p-2 rounded-2xl border border-white/5 flex flex-col justify-between min-h-[65px]">
+                    <p class="text-[9px] text-slate-400">কিস্তি</p>
+                    <h4 id="custInstallments" class="text-[11px] font-bold text-indigo-300 mt-1 truncate">০</h4>
+                </div>
+                <div class="bg-gradient-to-br from-emerald-950 to-slate-950 p-2 rounded-2xl border border-emerald-500/20 flex flex-col justify-between min-h-[65px]">
+                    <p class="text-[9px] text-emerald-400 font-medium">মোট লাভ</p>
+                    <h4 id="custTotalProfitShare" class="text-[11px] font-extrabold text-lime-400 mt-1 truncate">৳ ০</h4>
+                </div>
+            </div>
+        </section>
+
+        <!-- লাভের অংশ পাওয়ার ইতিহাস -->
+        <section class="bg-white p-5 rounded-2xl shadow-md border border-slate-100 space-y-3">
+            <div class="flex justify-between items-center border-b border-slate-50 pb-2">
+                <h2 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <i class="fa-solid fa-chart-line text-emerald-600"></i> লাভের অংশ পাওয়ার ইতিহাস
+                </h2>
+                <div class="flex items-center gap-2">
+                    <span id="profitCount" class="text-[10px] bg-emerald-50 text-emerald-600 font-bold px-2 py-0.5 rounded-full">০ বার</span>
+                    <button onclick="downloadProfitPDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg transition flex items-center gap-1">
+                        <i class="fa-solid fa-file-pdf"></i> PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- লাভের ডেট ফিল্টার প্যানেল -->
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 grid grid-cols-2 gap-2 text-[10px] font-bold text-slate-500">
+                <div>
+                    <label class="block mb-1">শুরুর তারিখ (From)</label>
+                    <input type="date" id="profitStartDate" onchange="filterCustomerProfits()" class="w-full bg-white border border-slate-200 rounded-lg p-1.5 font-semibold text-slate-700 outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block mb-1">শেষের তারিখ (To)</label>
+                    <input type="date" id="profitEndDate" onchange="filterCustomerProfits()" class="w-full bg-white border border-slate-200 rounded-lg p-1.5 font-semibold text-slate-700 outline-none focus:border-emerald-500">
+                </div>
+            </div>
+
+            <div class="overflow-x-auto text-xs">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-[10px] text-slate-400 border-b border-slate-100 font-medium">
+                            <th class="pb-1.5">তারিখ ও সময়</th>
+                            <th class="pb-1.5">উৎস (ঋণগ্রহীতা)</th>
+                            <th class="pb-1.5 text-right">প্রাপ্ত লভ্যাংশ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="profitHistoryBody" class="divide-y divide-slate-50">
+                        <tr><td colspan="3" class="py-4 text-center text-slate-400">ডাটা লোড হচ্ছে...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-between items-center pt-2 text-[11px] border-t border-slate-100">
+                <button onclick="changeProfitPage(-1)" id="prevProfitBtn" class="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg font-bold disabled:opacity-50" disabled>পূর্ববর্তী</button>
+                <span id="profitPageInfo" class="text-slate-500 font-medium">পৃষ্ঠা ১</span>
+                <button onclick="changeProfitPage(1)" id="nextProfitBtn" class="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg font-bold disabled:opacity-50" disabled>পরবর্তী</button>
+            </div>
+        </section>
+
+        <!-- চলতি মাসের সাম্প্রতিক জমা -->
+        <section class="bg-white p-5 rounded-2xl shadow-md border border-slate-100 space-y-3">
+            <div class="flex justify-between items-center border-b border-slate-50 pb-2">
+                <h2 class="text-xs font-bold text-slate-800">চলতি মাসের সাম্প্রতিক জমা</h2>
+                <span id="currentMonthCount" class="text-[10px] bg-indigo-50 text-indigo-600 font-bold px-2 py-0.5 rounded-full">০টি কিস্তি</span>
+            </div>
+            <div class="overflow-x-auto text-xs">
+                <table class="w-full text-left">
+                    <tbody id="depositHistoryBody">
+                        <tr><td class="py-4 text-center text-slate-400">ডাটা লোড হচ্ছে...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- লোন স্টেটমেন্ট ও লেজার রিপোর্ট -->
+        <section class="bg-white p-5 rounded-2xl shadow-md border border-slate-100 space-y-3">
+            <h2 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <i class="fa-solid fa-file-invoice text-emerald-600"></i> লোন স্টেটমেন্ট ও লেজার রিপোর্ট
+            </h2>
+            <div class="grid grid-cols-2 gap-2 text-[10px] font-bold text-slate-500">
+                <div>
+                    <label class="block mb-1">শুরুর তারিখ</label>
+                    <input type="date" id="filterStartDate" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-semibold text-slate-700 outline-none">
+                </div>
+                <div>
+                    <label class="block mb-1">শেষের তারিখ</label>
+                    <input type="date" id="filterEndDate" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-semibold text-slate-700 outline-none">
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5 pt-1">
+                <button onclick="setQuickFilter(12)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-[10px] transition">১ বছরের রিপোর্ট</button>
+                <button onclick="searchStatement()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-[10px] transition shadow-sm">সার্চ করুন</button>
+                <button onclick="downloadStatementPDF()" class="bg-slate-900 hover:bg-black text-white font-bold py-2 rounded-xl text-[10px] transition flex items-center justify-center gap-1"><i class="fa-solid fa-file-pdf text-rose-400"></i> PDF</button>
+            </div>
+            
+            <!-- ডিফল্টভাবে এই সম্পূর্ণ কন্টেইনারটি 'hidden' থাকবে -->
+            <div class="overflow-x-auto pt-4 hidden border-t border-slate-100 mt-3" id="reportTableContainer">
+                <table class="w-full text-left text-[11px] border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-100 text-slate-400 font-bold bg-slate-50">
+                            <th class="py-2 px-2">তারিখ</th>
+                            <th class="py-2 px-2 text-right">জমার পরিমাণ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportTableBody" class="text-slate-600 divide-y divide-slate-50"></tbody>
+                </table>
+                
+                <!-- স্টেটমেন্ট তালিকার নেক্সট পেজ কন্ট্রোল -->
+                <div class="flex justify-between items-center pt-3 text-[11px] border-t border-slate-100 mt-2">
+                    <button onclick="changeStatementPage(-1)" id="prevStatementBtn" class="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg font-bold disabled:opacity-50" disabled>পূর্ববর্তী</button>
+                    <span id="statementPageInfo" class="text-slate-500 font-medium">পৃষ্ঠা ১</span>
+                    <button onclick="changeStatementPage(1)" id="nextStatementBtn" class="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg font-bold disabled:opacity-50" disabled>পরবর্তী</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { auth, db } from "./firebase-config.js";
+        import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        let allDepositsArray = [];
+        let filteredDepositsArray = []; 
+        let masterCustomerProfitsArray = []; 
+        let globalCustomerName = "গ্রাহক";
+
+        const ITEMS_PER_PAGE = 5;
+        let currentProfitPage = 1;
+        let currentStatementPage = 1;
+
+        const getLocalDateString = (dateObj) => {
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        const setupDefaultDates = () => {
+            const today = new Date();
+            const localTodayStr = getLocalDateString(today);
+
+            const oneYearAgo = new Date();
+            oneYearAgo.setFullYear(today.getFullYear() - 1);
+            const localOneYearAgoStr = getLocalDateString(oneYearAgo);
+
+            document.getElementById('filterStartDate').value = localOneYearAgoStr;
+            document.getElementById('filterEndDate').value = localTodayStr;
+
+            document.getElementById('profitStartDate').value = localOneYearAgoStr;
+            document.getElementById('profitEndDate').value = localTodayStr;
+        };
+
+        window.setQuickFilter = (months) => {
+            const today = new Date();
+            const pastDate = new Date();
+            pastDate.setMonth(today.getMonth() - months);
+            
+            document.getElementById('filterStartDate').value = getLocalDateString(pastDate);
+            document.getElementById('filterEndDate').value = getLocalDateString(today);
+            searchStatement();
+        };
+
+        const getFilteredProfits = () => {
+            const startDateVal = document.getElementById('profitStartDate').value; 
+            const endDateVal = document.getElementById('profitEndDate').value;     
+
+            let filtered = [...masterCustomerProfitsArray];
+
+            if (startDateVal || endDateVal) {
+                filtered = filtered.filter(p => {
+                    const pDateStr = getLocalDateString(p.rawDateObj); 
+                    if (startDateVal && endDateVal) {
+                        return pDateStr >= startDateVal && pDateStr <= endDateVal;
+                    } else if (startDateVal) {
+                        return pDateStr >= startDateVal;
+                    } else if (endDateVal) {
+                        return pDateStr <= endDateVal;
+                    }
+                    return true;
+                });
+            }
+            return filtered;
+        };
+
+        const renderCustomerProfitTable = () => {
+            const profitBody = document.getElementById('profitHistoryBody');
+            if(!profitBody) return;
+            profitBody.innerHTML = "";
+
+            const filtered = getFilteredProfits();
+            document.getElementById('profitCount').innerText = `${filtered.length} বার`;
+
+            const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+            if (currentProfitPage > totalPages) currentProfitPage = totalPages;
+
+            const startIndex = (currentProfitPage - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+            const paginatedItems = filtered.slice(startIndex, endIndex);
+
+            document.getElementById('prevProfitBtn').disabled = currentProfitPage === 1;
+            document.getElementById('nextProfitBtn').disabled = currentProfitPage === totalPages;
+            document.getElementById('profitPageInfo').innerText = `পৃষ্ঠা ${currentProfitPage} / ${totalPages}`;
+
+            if (paginatedItems.length === 0) {
+                profitBody.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-slate-400">কোনো লাভের রেকর্ড পাওয়া যায়নি।</td></tr>`;
+                return;
+            }
+
+            paginatedItems.forEach((p) => {
+                profitBody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition border-b border-slate-50">
+                        <td class="py-2 text-slate-500 text-[11px]">${p.displayDate}</td>
+                        <td class="py-2 text-slate-600 font-medium">${p.borrowerName}</td>
+                        <td class="py-2 text-right font-bold text-emerald-600">৳ ${p.amount}</td>
+                    </tr>
+                `;
+            });
+        };
+
+        window.changeProfitPage = (direction) => {
+            currentProfitPage += direction;
+            renderCustomerProfitTable();
+        };
+
+        window.filterCustomerProfits = () => {
+            currentProfitPage = 1; 
+            renderCustomerProfitTable();
+        };
+
+        // স্টেটমেন্ট রেন্ডার লজিক
+        const renderStatementTable = () => {
+            const tbody = document.getElementById('reportTableBody');
+            tbody.innerHTML = "";
+
+            const totalPages = Math.ceil(filteredDepositsArray.length / ITEMS_PER_PAGE) || 1;
+            if (currentStatementPage > totalPages) currentStatementPage = totalPages;
+
+            const startIndex = (currentStatementPage - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+            const paginatedItems = filteredDepositsArray.slice(startIndex, endIndex);
+
+            document.getElementById('prevStatementBtn').disabled = currentStatementPage === 1;
+            document.getElementById('nextStatementBtn').disabled = currentStatementPage === totalPages;
+            document.getElementById('statementPageInfo').innerText = `পৃষ্ঠা ${currentStatementPage} / ${totalPages}`;
+
+            if(paginatedItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="2" class="py-4 text-center text-slate-400">এই সময়ের মধ্যে কোনো জমার রেকর্ড নেই।</td></tr>`;
+            } else {
+                paginatedItems.forEach(p => {
+                    tbody.innerHTML += `<tr class="border-b border-slate-50"><td class="py-2 px-2">${p.displayDate}</td><td class="py-2 px-2 text-right font-bold text-slate-800">৳ ${p.amount}</td></tr>`;
+                });
+            }
+        };
+
+        window.changeStatementPage = (direction) => {
+            currentStatementPage += direction;
+            renderStatementTable();
+        };
+
+        // সার্চ করার পর টেবিল কন্টেইনার আন-হাইড (Show) করার লজিক
+        window.searchStatement = () => {
+            const start = document.getElementById('filterStartDate').value;
+            const end = document.getElementById('filterEndDate').value;
+            
+            filteredDepositsArray = allDepositsArray.filter(d => d.rawDate >= start && d.rawDate <= end);
+            currentStatementPage = 1; 
+            
+            renderStatementTable();
+            // কন্টেইনার থেকে hidden ক্লাস রিমুভ করে দৃশ্যমান করা হলো
+            document.getElementById('reportTableContainer').classList.remove('hidden');
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) { window.location.href = 'index.html'; return; }
+
+            onSnapshot(doc(db, "users", user.uid), (userDoc) => {
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    globalCustomerName = data.name || "গ্রাহক";
+                    document.getElementById('customerName').innerText = globalCustomerName;
+                    const totalDeposit = parseFloat(data.totalDeposit || 0);
+                    const profitShare = parseFloat(data.totalProfitShare || 0);
+                    document.getElementById('custTotalDeposit').innerText = `৳ ${totalDeposit}`;
+                    document.getElementById('custInstallments').innerText = `${data.totalInstallments || 0}`;
+                    document.getElementById('custTotalProfitShare').innerText = `৳ ${profitShare % 1 === 0 ? profitShare : profitShare.toFixed(2)}`;
+                    const totalSum = totalDeposit + profitShare;
+                    document.getElementById('custTotalSum').innerText = `৳ ${totalSum % 1 === 0 ? totalSum : totalSum.toFixed(2)}`;
+                }
+            });
+
+            onSnapshot(query(collection(db, "deposits"), where("userId", "==", user.uid)), (snapshot) => {
+                allDepositsArray = [];
+                let rawDocs = [];
+                snapshot.forEach(d => rawDocs.push(d.data()));
+                rawDocs.sort((a, b) => (b.date?.seconds || 0) - (a.date?.seconds || 0));
+                
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                let count = 0;
+                const tbody = document.getElementById('depositHistoryBody');
+                tbody.innerHTML = "";
+
+                if(rawDocs.length === 0) {
+                    tbody.innerHTML = `<tr><td class="py-4 text-center text-slate-400">কোনো জমার রেকর্ড পাওয়া যায়নি।</td></tr>`;
+                }
+
+                rawDocs.forEach(dep => {
+                    const jsDate = dep.date ? new Date(dep.date.seconds * 1000) : null;
+                    if(jsDate) {
+                        const localDepDateStr = getLocalDateString(jsDate);
+                        allDepositsArray.push({ rawDate: localDepDateStr, displayDate: jsDate.toLocaleDateString('bn-BD'), amount: parseFloat(dep.amount || 0) });
+                        
+                        if (jsDate.getFullYear() === currentYear && jsDate.getMonth() === currentMonth) {
+                            count++;
+                            tbody.innerHTML += `<tr class="border-b border-slate-50"><td class="py-3 text-slate-500">${jsDate.toLocaleDateString('bn-BD')}</td><td class="py-3 text-right font-bold text-emerald-600">৳ ${dep.amount}</td></tr>`;
+                        }
+                    }
+                });
+                document.getElementById('currentMonthCount').innerText = `এই মাসে: ${count}টি`;
+                
+                // পৃষ্ঠা লোড হওয়ার সময় টেবিল হাইড রাখতে লাইভ স্ন্যাপশটে অটো-সার্চ ফাংশন বন্ধ করা হলো।
+                // ইউজার নিজে সার্চ বাটনে প্রেস করলেই কেবল ডেটা জেনারেট হবে।
+            });
+
+            onSnapshot(query(collection(db, "profits"), where("userId", "==", user.uid)), (snapshot) => {
+                masterCustomerProfitsArray = [];
+                snapshot.forEach((doc) => {
+                    const p = doc.data();
+                    const rawDateObj = p.date ? p.date.toDate() : new Date();
+                    const displayDateStr = rawDateObj.toLocaleDateString('bn-BD') + " " + rawDateObj.toLocaleTimeString('bn-BD', {hour: '2-digit', minute:'2-digit', hour12: true});
+                    const bName = p.borrowerName || "সাধারণ লাভ";
+                    
+                    masterCustomerProfitsArray.push({
+                        id: doc.id,
+                        rawDateObj: rawDateObj,
+                        displayDate: displayDateStr,
+                        borrowerName: bName,
+                        amount: parseFloat(p.amount || 0).toFixed(2)
+                    });
+                });
+                
+                masterCustomerProfitsArray.sort((a, b) => b.rawDateObj - a.rawDateObj);
+                renderCustomerProfitTable();
+            }, (error) => {
+                console.error("Profit load error: ", error);
+            });
+        });
+
+        window.downloadProfitPDF = () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const start = document.getElementById('profitStartDate').value;
+            const end = document.getElementById('profitEndDate').value;
+            const filteredProfits = getFilteredProfits();
+
+            doc.setFontSize(16);
+            doc.text("Profit Share History Report", 14, 15);
+            doc.setFontSize(11);
+            doc.text(`Customer Name: ${globalCustomerName}`, 14, 24);
+            doc.text(`Duration: ${start || 'All'} to ${end || 'All'}`, 14, 31);
+
+            const tableRows = [];
+            let totalProfit = 0;
+            
+            filteredProfits.forEach(item => {
+                tableRows.push([item.displayDate, item.borrowerName, `Tk ${item.amount}`]);
+                totalProfit += parseFloat(item.amount);
+            });
+            tableRows.push(["Total Profit Received", "", `Tk ${totalProfit.toFixed(2)}`]);
+
+            doc.autoTable({
+                head: [['Date & Time', 'Source (Borrower)', 'Profit Amount']],
+                body: tableRows,
+                startY: 38,
+                theme: 'striped',
+                headStyles: { fillColor: [5, 150, 105] }
+            });
+
+            doc.save(`Profit_Statement_${globalCustomerName}.pdf`);
+        };
+
+        window.downloadStatementPDF = () => {
+            // যদি সার্চ না করেই পিডিএফ ডাউনলোড করতে চায়, তবে রানিং ফিল্টার ডাটা সেট করে নেওয়া হবে সেফটির জন্য
+            const start = document.getElementById('filterStartDate').value;
+            const end = document.getElementById('filterEndDate').value;
+            const targetArray = filteredDepositsArray.length > 0 ? filteredDepositsArray : allDepositsArray.filter(d => d.rawDate >= start && d.rawDate <= end);
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(16);
+            doc.text("Loan Statement & Ledger Report", 14, 15);
+            doc.setFontSize(11);
+            doc.text(`Customer Name: ${globalCustomerName}`, 14, 24);
+            doc.text(`Report Duration: ${start} to ${end}`, 14, 31);
+
+            const tableRows = [];
+            let totalSum = 0;
+            
+            targetArray.forEach(item => {
+                tableRows.push([item.displayDate, `Tk ${item.amount}`]);
+                totalSum += item.amount;
+            });
+            tableRows.push(["Total Deposited Amount", `Tk ${totalSum}`]);
+
+            doc.autoTable({
+                head: [['Deposit Date', 'Amount']],
+                body: tableRows,
+                startY: 38,
+                theme: 'striped',
+                headStyles: { fillColor: [79, 70, 229] }
+            });
+
+            doc.save(`Deposit_Statement_${globalCustomerName}.pdf`);
+        };
+
+        window.logout = () => signOut(auth).then(() => window.location.href = 'index.html');
+        setupDefaultDates();
+    </script>
+</body>
+</html>
